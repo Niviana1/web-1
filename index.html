@@ -3,95 +3,130 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Discord Clone</title>
+  <title>Login Page</title>
+  <!-- Bootstrap CSS -->
   <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Material-UI Icon -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <!-- Tailwind CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <!-- Semantic UI CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.css">
   <style>
     body {
-      background: #f4f4f4;
-      font-family: Arial, sans-serif;
+      background: url('https://source.unsplash.com/1600x900/?nature,water') no-repeat center center fixed;
+      background-size: cover;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
     }
-    .chat-container {
-      max-width: 600px;
-      margin: 50px auto;
-      background: #fff;
-      padding: 20px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    .login-container {
+      max-width: 400px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 30px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+      text-align: center;
+      animation: fadeIn 1s ease-in-out;
     }
-    .messages {
-      height: 300px;
-      overflow-y: scroll;
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+    .login-title {
+      font-size: 28px;
       margin-bottom: 20px;
+      font-weight: bold;
+      color: #333;
     }
-    .message {
-      margin-bottom: 10px;
+    .form-control {
+      height: calc(2.25rem + 2px);
+      padding: .375rem .75rem;
+      font-size: 1rem;
+      line-height: 1.5;
+      border-radius: .25rem;
+      border: 1px solid #ced4da;
+      transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
     }
-    .message img, .message video {
-      max-width: 100%;
+    .form-control:focus {
+      border-color: #80bdff;
+      outline: 0;
+      box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    .btn-custom {
+      background-color: #007bff;
+      color: white;
+      border-radius: 5px;
+      transition: background-color 0.3s;
+    }
+    .btn-custom:hover {
+      background-color: #0056b3;
+    }
+    .forgot-password {
+      color: #007bff;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    .forgot-password:hover {
+      color: #0056b3;
+    }
+    .ui.input > input {
+      font-size: 1rem;
+      padding: 0.75rem;
+      border-radius: 0.25rem;
+    }
+    .credentials {
+      margin-top: 20px;
+      font-size: 16px;
+      color: #333;
+      text-align: left;
+    }
+    .corner-img {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 50px;
+      height: 50px;
     }
   </style>
 </head>
 <body>
-  <div class="chat-container">
-    <h2>Chat Room</h2>
-    <div class="messages" id="messages"></div>
-    <form id="message-form">
-      <input type="text" id="username" placeholder="Username" class="form-control mb-2">
-      <textarea id="message" placeholder="Enter your message" class="form-control mb-2"></textarea>
-      <input type="file" id="file" class="form-control mb-2">
-      <button type="submit" class="btn btn-primary">Send</button>
+
+  <div class="login-container">
+    <h2 class="login-title">Welcome Back!</h2>
+    <form id="login-form">
+      <div class="ui input fluid mb-3">
+        <input type="text" id="username" placeholder="Enter username">
+      </div>
+      <div class="ui input fluid mb-3">
+        <input type="password" id="password" placeholder="Enter password">
+      </div>
+      <button type="submit" class="ui button primary fluid">Login</button>
+      <p class="mt-3">
+        <a href="#" class="forgot-password">Forgot password? contact admin</a>
+      </p>
     </form>
+    <div class="credentials">
+      <p><strong>Username:</strong> nomanland22</p>
+      <p><strong>Password:</strong> ABCDEFINITION</p>
+    </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.js"></script>
-  <script>
-    const socket = io('your-backend-server-url');
+  <img src="https://yip.su/16tTU7.gif" alt="Corner Image" class="corner-img">
 
-    socket.on('newMessage', addMessageToDOM);
-
-    async function fetchMessages() {
-      const res = await fetch('your-backend-server-url/api/messages');
-      const data = await res.json();
-      data.reverse().forEach(addMessageToDOM);
-    }
-
-    function addMessageToDOM(message) {
-      const messagesDiv = document.getElementById('messages');
-      const messageDiv = document.createElement('div');
-      messageDiv.classList.add('message');
-      messageDiv.innerHTML = `
-        <strong>${message.username}</strong>: ${message.message}
-        ${message.imageUrl ? `<img src="${message.imageUrl}" alt="Image">` : ''}
-        ${message.videoUrl ? `<video controls src="${message.videoUrl}"></video>` : ''}
-      `;
-      messagesDiv.appendChild(messageDiv);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    }
-
-    document.getElementById('message-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const username = document.getElementById('username').value;
-      const message = document.getElementById('message').value;
-      const file = document.getElementById('file').files[0];
-      
-      const formData = new FormData();
-      formData.append('username', username);
-      formData.append('message', message);
-      if (file) {
-        formData.append('file', file);
-      }
-
-      const res = await fetch('your-backend-server-url/api/messages', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const newMessage = await res.json();
-      addMessageToDOM(newMessage);
-
-      document.getElementById('message-form').reset();
-    });
-
-    fetchMessages();
-  </script>
+  <!-- Bootstrap JS and dependencies -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <!-- Semantic UI JS -->
+  <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
 </body>
 </html>
