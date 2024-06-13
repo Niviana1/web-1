@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Discord Clone</title>
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: #f4f4f4;
+      font-family: Arial, sans-serif;
+    }
+    .chat-container {
+      max-width: 600px;
+      margin: 50px auto;
+      background: #fff;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    .messages {
+      height: 300px;
+      overflow-y: scroll;
+      margin-bottom: 20px;
+    }
+    .message {
+      margin-bottom: 10px;
+    }
+    .message img, .message video {
+      max-width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <h2>Chat Room</h2>
+    <div class="messages" id="messages"></div>
+    <form id="message-form">
+      <input type="text" id="username" placeholder="Username" class="form-control mb-2">
+      <textarea id="message" placeholder="Enter your message" class="form-control mb-2"></textarea>
+      <input type="file" id="file" class="form-control mb-2">
+      <button type="submit" class="btn btn-primary">Send</button>
+    </form>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.js"></script>
+  <script>
+    const socket = io('your-backend-server-url');
+
+    socket.on('newMessage', addMessageToDOM);
+
+    async function fetchMessages() {
+      const res = await fetch('your-backend-server-url/api/messages');
+      const data = await res.json();
+      data.reverse().forEach(addMessageToDOM);
+    }
+
+    function addMessageToDOM(message) {
+      const messagesDiv = document.getElementById('messages');
+      const messageDiv = document.createElement('div');
+      messageDiv.classList.add('message');
+      messageDiv.innerHTML = `
+        <strong>${message.username}</strong>: ${message.message}
+        ${message.imageUrl ? `<img src="${message.imageUrl}" alt="Image">` : ''}
+        ${message.videoUrl ? `<video controls src="${message.videoUrl}"></video>` : ''}
+      `;
+      messagesDiv.appendChild(messageDiv);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    document.getElementById('message-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('username').value;
+      const message = document.getElementById('message').value;
+      const file = document.getElementById('file').files[0];
+      
+      const formData = new FormData();
+      formData.append('username', username);
+      formData.append('message', message);
+      if (file) {
+        formData.append('file', file);
+      }
+
+      const res = await fetch('your-backend-server-url/api/messages', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const newMessage = await res.json();
+      addMessageToDOM(newMessage);
+
+      document.getElementById('message-form').reset();
+    });
+
+    fetchMessages();
+  </script>
+</body>
+</html>
