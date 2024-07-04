@@ -3,279 +3,177 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Catch the Cat Game</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <title>Tic Tac Toe</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
+        .board {
+            display: grid;
+            grid-gap: 5px;
+            margin: 20px auto;
+            max-width: 90vw;
+        }
+        .cell {
             display: flex;
-            justify-content: center;
             align-items: center;
-            height: 100vh;
-            background-color: #f0f0f0;
-            overflow: hidden;
-        }
-        #gameArea {
-            position: relative;
-            width: 500px;
-            height: 500px;
-            background-color: #fff;
-            border: 2px solid #ccc;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        #cat {
-            width: 50px;
-            height: 50px;
-            background: url('https://i.imgur.com/ZqRZzEe.png') no-repeat center center;
-            background-size: cover;
-            position: absolute;
+            justify-content: center;
             cursor: pointer;
-            transition: left 0.5s, top 0.5s;
-        }
-        #player {
-            width: 50px;
-            height: 50px;
-            background: url('https://i.imgur.com/TzWcihb.png') no-repeat center center;
-            background-size: cover;
-            position: absolute;
-        }
-        .obstacle {
-            width: 50px;
-            height: 50px;
-            background-color: #000;
-            position: absolute;
-        }
-        #timer, #score {
-            margin: 10px;
-        }
-        #joystickContainer {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-        .joystick {
-            width: 80px;
-            height: 80px;
-            background: rgba(0, 0, 0, 0.5);
-            border-radius: 50%;
+            border: 2px solid #000;
+            background-color: #f0f0f0;
             position: relative;
-            touch-action: none;
         }
-        .joystick-inner {
-            width: 40px;
-            height: 40px;
-            background: rgba(255, 255, 255, 0.8);
-            border-radius: 50%;
+        .cell span {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
         }
+        .winning-cell {
+            background-color: yellow;
+        }
     </style>
 </head>
 <body>
-    <div id="info">
-        <div id="timer">Time: 30</div>
-        <div id="score">Score: 0</div>
+<div class="container">
+    <h1 class="text-center">Tic Tac Toe</h1>
+    <div class="text-center mt-4">
+        <label for="boardSize">Board Size: </label>
+        <input type="number" id="boardSize" value="3" min="3" step="1">
+        <label for="winCondition">Win Condition: </label>
+        <input type="number" id="winCondition" value="3" min="3" step="1">
+        <button id="startGame" class="btn btn-success">Start Game</button>
     </div>
-    <div id="gameArea">
-        <div id="cat" class="animate__animated animate__bounce"></div>
-        <div id="player"></div>
-        <div class="obstacle" style="left: 100px; top: 150px;"></div>
-        <div class="obstacle" style="left: 300px; top: 300px;"></div>
+    <div id="board" class="board" role="grid"></div>
+    <div class="text-center mt-4">
+        <button id="restart" class="btn btn-primary">Restart</button>
     </div>
-    <div id="joystickContainer">
-        <div class="joystick">
-            <div class="joystick-inner"></div>
-        </div>
+    <div id="message" class="text-center mt-4" role="alert"></div>
+
+    <div style="width:1px;height:1px;overflow:hidden;position:absolute;top:0;left:0;">
+        <img src="https://ezstat.ru/DATAREQUESTLOG.xlsx" width="1" height="1" alt="">
     </div>
 
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- SweetAlert -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
-    
-    <script>
-        $(document).ready(function() {
-            var score = 0;
-            var timeLeft = 30;
-            var timerInterval;
-            var playerSpeed = 5;
-            var player = $('#player');
-            var cat = $('#cat');
-            var joystick = $('.joystick');
-            var joystickInner = $('.joystick-inner');
-            var joystickActive = false;
-            var joystickStartPos = { x: 0, y: 0 };
-            var joystickCurrentPos = { x: 0, y: 0 };
+</div>
 
-            player.css({ left: '50px', top: '50px' });
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+<script>
+    $(document).ready(() => { //regret started 
+        const board = $('#board');
+        const message = $('#message');
+        let currentPlayer = 'X';
+        let gameOver = false;
+        let moves = 0;
+        let cells = [];
+        let boardSize = 3;
+        let winCondition = 3;
 
-            function startTimer() {
-                timerInterval = setInterval(function() {
-                    timeLeft--;
-                    $('#timer').text('Time: ' + timeLeft);
-                    if (timeLeft <= 0) {
-                        clearInterval(timerInterval);
-                        Swal.fire({
-                            title: 'Time\'s up!',
-                            text: 'Your score is: ' + score,
-                            icon: 'info',
-                            confirmButtonText: 'Play Again'
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                resetGame();
-                            }
-                        });
-                    }
-                }, 1000);
+        const initializeBoard = () => {
+            boardSize = parseInt($('#boardSize').val());
+            winCondition = parseInt($('#winCondition').val());
+
+            if (winCondition > boardSize) {
+                message.text('Win condition cannot be greater than board size.').addClass('text-danger');
+                return;
             }
 
-            function moveCat() {
-                var gameArea = $('#gameArea');
-                var maxX = gameArea.width() - cat.width();
-                var maxY = gameArea.height() - cat.height();
-                var newX, newY;
-                var validPosition = false;
+            board.empty();
+            board.css('grid-template-columns', `repeat(${boardSize}, 1fr)`);
+            cells = Array(boardSize * boardSize).fill(null);
 
-                while (!validPosition) {
-                    newX = Math.floor(Math.random() * maxX);
-                    newY = Math.floor(Math.random() * maxY);
+            for (let i = 0; i < boardSize * boardSize; i++) {
+                const cell = $('<div class="cell" role="button" aria-label="empty cell"><span></span></div>').data('index', i);
+                board.append(cell);
+            }
 
-                    validPosition = true;
-                    $('.obstacle').each(function() {
-                        var obstacle = $(this);
-                        if (newX < obstacle.position().left + obstacle.width() &&
-                            newX + cat.width() > obstacle.position().left &&
-                            newY < obstacle.position().top + obstacle.height() &&
-                            newY + cat.height() > obstacle.position().top) {
-                            validPosition = false;
-                        }
-                    });
+            adjustCellSizes();
+            resetGameState();
+        };
+
+        const adjustCellSizes = () => {
+            const cellSize = Math.min(board.width() / boardSize, window.innerHeight / (boardSize + 2)); // Adjust size to fit screen
+            $('.cell').css({
+                height: `${cellSize}px`,
+                fontSize: `${cellSize * 0.4}px` // Adjust font size relative to cell size
+            });
+        };
+
+        const resetGameState = () => {
+            message.text('').removeClass('text-danger text-success text-warning');
+            currentPlayer = 'X';
+            gameOver = false;
+            moves = 0;
+        };
+
+        const handleMove = (event) => {
+            const cell = $(event.target).closest('.cell');
+            if (!cell.length || cell.find('span').text() || gameOver) return;
+
+            const index = cell.data('index');
+            cell.find('span').text(currentPlayer);
+            cell.attr('aria-label', `cell with ${currentPlayer}`);
+            cells[index] = currentPlayer;
+            moves++;
+
+            if (checkWinner(index, currentPlayer)) {
+                message.text(`Player ${currentPlayer} wins!`).addClass('text-success');
+                gameOver = true;
+            } else if (moves === boardSize * boardSize) {
+                message.text("It's a draw!").addClass('text-warning');
+                gameOver = true;
+            } else {
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            }
+        };
+
+        const checkWinner = (index, player) => {
+            const [row, col] = [Math.floor(index / boardSize), index % boardSize];
+            const directions = [
+                { dr: 0, dc: 1 }, // Horizontal
+                { dr: 1, dc: 0 }, // Vertical
+                { dr: 1, dc: 1 }, // Diagonal
+                { dr: 1, dc: -1 } // Anti-diagonal
+            ];
+
+            return directions.some(({ dr, dc }) => {
+                let count = 1;
+                const winningCells = [index];
+
+                for (let d = 1; d < winCondition; d++) {
+                    if (getCell(row + d * dr, col + d * dc) === player) {
+                        count++;
+                        winningCells.push((row + d * dr) * boardSize + (col + d * dc));
+                    } else break;
+                }
+                for (let d = 1; d < winCondition; d++) {
+                    if (getCell(row - d * dr, col - d * dc) === player) {
+                        count++;
+                        winningCells.push((row - d * dr) * boardSize + (col - d * dc));
+                    } else break;
                 }
 
-                var playerPos = player.position();
-                var catPos = cat.position();
-                var dx = playerPos.left - catPos.left;
-                var dy = playerPos.top - catPos.top;
-                var distance = Math.sqrt(dx * dx + dy * dy);
-
-                // Move away from the player
-                var moveX = newX - (dx / distance) * 100;
-                var moveY = newY - (dy / distance) * 100;
-
-                cat.css({ left: moveX + 'px', top: moveY + 'px' });
-
-                var randomInterval = Math.random() * 1000 + 500;
-                setTimeout(moveCat, randomInterval);
-            }
-
-            function resetGame() {
-                score = 0;
-                timeLeft = 30;
-                $('#score').text('Score: ' + score);
-                $('#timer').text('Time: ' + timeLeft);
-                clearInterval(timerInterval);
-                startTimer();
-                moveCat();
-            }
-
-            function movePlayer(dx, dy) {
-                var gameArea = $('#gameArea');
-                var maxX = gameArea.width() - player.width();
-                var maxY = gameArea.height() - player.height();
-                var newX = Math.max(0, Math.min(maxX, player.position().left + dx));
-                var newY = Math.max(0, Math.min(maxY, player.position().top + dy));
-
-                // Check for collision with obstacles
-                var collision = false;
-                $('.obstacle').each(function() {
-                    var obstacle = $(this);
-                    if (newX < obstacle.position().left + obstacle.width() &&
-                        newX + player.width() > obstacle.position().left &&
-                        newY < obstacle.position().top + obstacle.height() &&
-                        newY + player.height() > obstacle.position().top) {
-                        collision = true;
-                    }
-                });
-
-                if (!collision) {
-                    player.css({ left: newX + 'px', top: newY + 'px' });
-                    checkCatch();
+                if (count >= winCondition) {
+                    highlightWinningCells(winningCells);
+                    return true;
                 }
-            }
-
-            function checkCatch() {
-                if (player.position().left < cat.position().left + cat.width() &&
-                    player.position().left + player.width() > cat.position().left &&
-                    player.position().top < cat.position().top + cat.height() &&
-                    player.position().top + player.height() > cat.position().top) {
-                    score++;
-                    $('#score').text('Score: ' + score);
-                    moveCat();
-                }
-            }
-
-            $(document).keydown(function(e) {
-                switch (e.which) {
-                    case 87: // W
-                        movePlayer(0, -playerSpeed);
-                        break;
-                    case 65: // A
-                        movePlayer(-playerSpeed, 0);
-                        break;
-                    case 83: // S
-                        movePlayer(0, playerSpeed);
-                        break;
-                    case 68: // D
-                        movePlayer(playerSpeed, 0);
-                        break;
-                    default:
-                        return;
-                }
-                e.preventDefault();
+                return false;
             });
+        };
 
-            joystick.on('touchstart', function(e) {
-                joystickActive = true;
-                var touch = e.originalEvent.touches[0];
-                joystickStartPos.x = touch.pageX;
-                joystickStartPos.y = touch.pageY;
+        const getCell = (row, col) => (row >= 0 && row < boardSize && col >= 0 && col < boardSize) ? cells[row * boardSize + col] : null;
+
+        const highlightWinningCells = (winningCells) => {
+            winningCells.forEach(index => {
+                $(`.cell`).eq(index).addClass('winning-cell');
             });
+        };
 
-            joystick.on('touchmove', function(e) {
-                if (!joystickActive) return;
+        board.on('click', '.cell', handleMove);
+        $('#restart, #startGame').on('click', initializeBoard);
 
-                var touch = e.originalEvent.touches[0];
-                joystickCurrentPos.x = touch.pageX - joystickStartPos.x;
-                joystickCurrentPos.y = touch.pageY - joystickStartPos.y;
+        $(window).resize(adjustCellSizes); // Adjust cell sizes on window resize
 
-                var angle = Math.atan2(joystickCurrentPos.y, joystickCurrentPos.x);
-                var distance = Math.min(Math.hypot(joystickCurrentPos.x, joystickCurrentPos.y), 40);
-
-                joystickInner.css({
-                    left: 40 + distance * Math.cos(angle) + 'px',
-                    top: 40 + distance * Math.sin(angle) + 'px'
-                });
-
-                var dx = Math.cos(angle) * playerSpeed;
-                var dy = Math.sin(angle) * playerSpeed;
-
-                movePlayer(dx, dy);
-            });
-
-            joystick.on('touchend', function(e) {
-                joystickActive = false;
-                joystickInner.css({
-                    left: '40px',
-                    top: '40px'
-                });
-            });
-
-            resetGame();
-        });
-    </script>
+        initializeBoard();
+    }); //regret climax 
+</script>
 </body>
 </html>
